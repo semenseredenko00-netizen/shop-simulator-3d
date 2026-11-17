@@ -1,2 +1,9 @@
-# shop-simulator-3d
-3D first-person shop simulator built with Vite, TypeScript, and Three.js.
+node_modules
+/dist
+.vite
+*.log
+.DS_Store
+
+# Keep the asset directories for model files
+/public/assets/*
+!/public/assets/README.md
