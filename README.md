@@ -4,6 +4,6 @@ node_modules
 *.log
 .DS_Store
 
-# Keep the asset directories for model files
+# Keep real asset files in public/assets
 /public/assets/*
 !/public/assets/README.md

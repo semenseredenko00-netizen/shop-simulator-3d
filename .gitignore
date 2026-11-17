@@ -1,12 +1,17 @@
-This folder is intentionally empty in the repository.
+This folder is intentionally left empty in the repository.
 
-Add the real CC0 glTF/GLB asset files here before running the game:
+Put the real CC0 model files here before running the game:
 
 - /public/assets/models/shelf.glb
 - /public/assets/models/fridge.glb
 - /public/assets/models/checkout.glb
 - /public/assets/models/cart.glb
-- /public/assets/models/customer.glb
+- /public/assets/models/customer_walk.glb
+
+Optional additional files:
+- /public/assets/models/customer_idle.glb
+- /public/assets/textures/
+- /public/assets/hdr/
 
 Recommended sources:
 - Kenney: https://www.kenney.nl/assets
@@ -15,4 +20,4 @@ Recommended sources:
 - Poly Haven: https://polyhaven.com/
 - ambientCG: https://ambientcg.com/
 
-Use PBR materials and keep the files in the /public/assets path so the app loads them at runtime.
+If you use the models from those sources, keep them in the public/assets path to be served by Vite.

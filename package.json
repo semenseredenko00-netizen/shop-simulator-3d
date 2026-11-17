@@ -9,12 +9,11 @@
     "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {
-    "three": "^0.166.1",
-    "postprocessing": "^6.35.2"
+    "three": "^0.166.1"
   },
   "devDependencies": {
     "@types/three": "^0.166.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.1"
+    "vite": "^5.4.10"
   }
 }
