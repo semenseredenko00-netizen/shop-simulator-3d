@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Shop Simulator 3D — HTML Demo</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #dfeaf4;
+        font-family: Arial, sans-serif;
+      }
+      body { touch-action: none; }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      #hud {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      #topbar {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        justify-content: space-between;
+        color: white;
+        font-weight: 700;
+        text-shadow: 0 2px 8px rgba(0,0,0,.5);
+      }
+      #message {
+        position: absolute;
+        top: 26px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.7);
+        color: white;
+        border-radius: 999px;
+        padding: 10px 18px;
+        border: 1px solid rgba(148,163,184,0.5);
+        font-size: 14px;
+      }
+      #touch {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 180px;
+        display: none;
+      }
+      #leftStick {
+        position: absolute;
+        left: 18px;
+        bottom: 18px;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,.35);
+        background: rgba(15,23,42,.2);
+      }
+      #leftKnob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 42px;
+        height: 42px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: rgba(255,255,255,.35);
+      }
+      @media (pointer: coarse), (max-width: 900px) {
+        #touch { display: block; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <div id="topbar">
+        <span id="money">$180.00</span>
+        <span id="day">Day 1</span>
+      </div>
+      <div id="message">Click to start. WASD + mouse. E interacts.</div>
+    </div>
+
+    <div id="touch">
+      <div id="leftStick"><div id="leftKnob"></div></div>
+    </div>
+
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#dfeaf4');
+      scene.fog = new THREE.Fog('#dfeaf4', 8, 30);
+
+      const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 1.7, 8);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      document.body.appendChild(renderer.domElement);
+
+      const ambient = new THREE.HemisphereLight('#dfeaf4', '#667085', 0.8);
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight('#fff5d6', 1.8);
+      keyLight.position.set(10, 12, 8);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(1024, 1024);
+      scene.add(keyLight);
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(30, 0.2, 30),
+        new THREE.MeshPhysicalMaterial({
+          color: '#d7d9d5',
+          roughness: 0.38,
+          metalness: 0.18,
+          clearcoat: 0.8,
+        })
+      );
+      floor.position.y = -0.1;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(30, 6, 0.3),
+        new THREE.MeshStandardMaterial({ color: '#edf2f8', roughness: 0.95 })
+      );
+      backWall.position.set(0, 3, -15);
+      scene.add(backWall);
+
+      const checkout = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 1.2, 1.5),
+        new THREE.MeshStandardMaterial({ color: '#dfe7ef', metalness: 0.55, roughness: 0.4 })
+      );
+      checkout.position.set(7, 0.6, 4.6);
+      checkout.castShadow = true;
+      checkout.receiveShadow = true;
+      scene.add(checkout);
+
+      function makeShelf() {
+        const group = new THREE.Group();
+        const frame = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 1.6, 0.7),
+          new THREE.MeshStandardMaterial({ color: '#d7d3d1', roughness: 0.8 })
+        );
+        frame.castShadow = true;
+        frame.receiveShadow = true;
+        group.add(frame);
+
+        for (const y of [0.6, -0.1, -0.7]) {
+          const shelf = new THREE.Mesh(
+            new THREE.BoxGeometry(2.2, 0.08, 0.7),
+            new THREE.MeshStandardMaterial({ color: '#fafaf9', roughness: 0.75 })
+          );
+          shelf.position.y = y;
+          group.add(shelf);
+        }
+        return group;
+      }
+
+      const shelves = [
+        makeShelf(),
+        makeShelf(),
+        makeShelf(),
+      ];
+      shelves[0].position.set(-10, 0, -6);
+      shelves[1].position.set(-4, 0, -6);
+      shelves[2].position.set(-10, 0, 1.5);
+      shelves.forEach((item) => scene.add(item));
+
+      const products = [];
+      const productColors = {
+        milk: '#dbeafe',
+        bread: '#f6d5a5',
+        eggs: '#fef3c7',
+        juice: '#fca5a5',
+      };
+      const productData = [
+        ['milk', new THREE.Vector3(-10.5, 1.1, -5.6)],
+        ['bread', new THREE.Vector3(-9.2, 1.1, -5.8)],
+        ['eggs', new THREE.Vector3(-8.0, 1.1, -6.1)],
+        ['juice', new THREE.Vector3(-10.5, 1.1, 1.0)],
+      ];
+
+      for (const [id, pos] of productData) {
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.4, 0.2),
+          new THREE.MeshStandardMaterial({ color: productColors[id], roughness: 0.5, metalness: 0.2 })
+        );
+        mesh.position.copy(pos);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+        products.push({ id, mesh, pos: pos.clone() });
+      }
+
+      function createCustomer(color) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.7, 0.3),
+          new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+        );
+        body.position.y = 1.05;
+        body.castShadow = true;
+        group.add(body);
+
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 18, 18),
+          new THREE.MeshStandardMaterial({ color: '#f4d0a8', roughness: 0.96 })
+        );
+        head.position.y = 1.7;
+        head.castShadow = true;
+        group.add(head);
+
+        const leftLeg = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.7, 0.15),
+          new THREE.MeshStandardMaterial({ color: '#1f2937', roughness: 1 })
+        );
+        leftLeg.position.set(-0.12, 0.3, 0);
+        leftLeg.castShadow = true;
+        group.add(leftLeg);
+
+        const rightLeg = leftLeg.clone();
+        rightLeg.position.x = 0.12;
+        group.add(rightLeg);
+
+        return group;
+      }
+
+      const customers = [
+        createCustomer('#fb7185'),
+        createCustomer('#60a5fa'),
+      ];
+      customers[0].position.set(-2.8, 0, 6.6);
+      customers[1].position.set(-2.8, 0, 4.8);
+      customers.forEach((customer) => scene.add(customer));
+
+      const state = {
+        yaw: 0,
+        pitch: 0,
+        moveX: 0,
+        moveY: 0,
+        pointerLocked: false,
+      };
+
+      const keys = {};
+      document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+      document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+      renderer.domElement.addEventListener('click', () => {
+        if (!state.pointerLocked) renderer.domElement.requestPointerLock();
+      });
+
+      document.addEventListener('pointerlockchange', () => {
+        state.pointerLocked = document.pointerLockElement === renderer.domElement;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!state.pointerLocked) return;
+        state.yaw -= e.movementX * 0.0022;
+        state.pitch -= e.movementY * 0.0018;
+        state.pitch = THREE.MathUtils.clamp(state.pitch, -1.2, 1.2);
+      });
+
+      const touchState = { active: false, x: 0, y: 0 };
+      const leftStick = document.getElementById('leftStick');
+      const leftKnob = document.getElementById('leftKnob');
+
+      function updateTouch(clientX, clientY) {
+        const rect = leftStick.getBoundingClientRect();
+        const px = clientX - rect.left - rect.width / 2;
+        const py = clientY - rect.top - rect.height / 2;
+        const limit = rect.width * 0.32;
+        const len = Math.min(limit, Math.hypot(px, py));
+        const angle = Math.atan2(py, px);
+        const x = Math.cos(angle) * len;
+        const y = Math.sin(angle) * len;
+        touchState.x = x / limit;
+        touchState.y = y / limit;
+        leftKnob.style.transform = `translate(${x}px, ${y}px)`;
+      }
+
+      leftStick.addEventListener('pointerdown', (e) => {
+        touchState.active = true;
+        updateTouch(e.clientX, e.clientY);
+      });
+      leftStick.addEventListener('pointermove', (e) => {
+        if (!touchState.active) return;
+        updateTouch(e.clientX, e.clientY);
+      });
+      leftStick.addEventListener('pointerup', () => {
+        touchState.active = false;
+        touchState.x = 0;
+        touchState.y = 0;
+        leftKnob.style.transform = 'translate(-50%, -50%)';
+      });
+      leftStick.addEventListener('pointerleave', () => {
+        touchState.active = false;
+        touchState.x = 0;
+        touchState.y = 0;
+        leftKnob.style.transform = 'translate(-50%, -50%)';
+      });
+
+      function animate() {
+        const dt = 1 / 60;
+        const forward = new THREE.Vector3(Math.sin(state.yaw), 0, Math.cos(state.yaw)).normalize();
+        const right = new THREE.Vector3(forward.z, 0, -forward.x).normalize();
+
+        const inputX = Number(keys['KeyD'] || keys['ArrowRight']) - Number(keys['KeyA'] || keys['ArrowLeft']) + touchState.x;
+        const inputZ = Number(keys['KeyW'] || keys['ArrowUp']) - Number(keys['KeyS'] || keys['ArrowDown']) - touchState.y;
+
+        const direction = new THREE.Vector3();
+        direction.addScaledVector(forward, inputZ);
+        direction.addScaledVector(right, inputX);
+        if (direction.lengthSq() > 0) direction.normalize();
+
+        camera.position.x += direction.x * 2.8 * dt;
+        camera.position.z += direction.z * 2.8 * dt;
+        camera.position.x = THREE.MathUtils.clamp(camera.position.x, -13, 13);
+        camera.position.z = THREE.MathUtils.clamp(camera.position.z, -13, 13);
+        camera.position.y = 1.7;
+
+        camera.rotation.order = 'YXZ';
+        camera.rotation.y = state.yaw;
+        camera.rotation.x = state.pitch;
+
+        for (let i = 0; i < customers.length; i++) {
+          const customer = customers[i];
+          customer.position.z += Math.sin(performance.now() * 0.001 + i) * 0.004;
+          customer.rotation.y = Math.atan2(camera.position.x - customer.position.x, camera.position.z - customer.position.z);
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      renderer.setAnimationLoop(animate);
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>
